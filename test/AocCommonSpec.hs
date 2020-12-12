@@ -17,6 +17,12 @@ main = hspec $ do
         ((maybeToError :: Maybe Int -> Either String Int) (Just 1)) `shouldBe` Right 1
       it "maybeToError Nothing ->> Left []" $
         ((maybeToError :: Maybe Int -> Either String Int) Nothing) `shouldBe` Left []
+  describe "maybeToErrorWith :: MonadError e m => e -> Maybe a -> m a" $ do
+    context "maybeToErrorWith :: String -> Maybe Int -> Either String Int" $ do
+      it "maybeToErrorWith \"error\" (Just a) ->> Right a" $
+        ((maybeToErrorWith :: String -> Maybe Int -> Either String Int) "error" (Just 1)) `shouldBe` Right 1
+      it "maybeToErrorWith \"error\" Nothing ->> Left \"error\"" $
+        ((maybeToErrorWith :: String -> Maybe Int -> Either String Int) "error" Nothing) `shouldBe` Left "error"
   describe "iterateUntilFixpoint :: Eq a => (a -> a) -> a -> [a]" $ do
     context "iterateUntilFixpoint id :: Int -> [Int]" $ do
       it "should be stable: LeanCheck" $

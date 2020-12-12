@@ -1,5 +1,6 @@
 module AocCommon (
   maybeToError,
+  maybeToErrorWith,
   iterateUntilFixpoint,
   iterateUntilFixpoint',
   takeUntilEqual
@@ -20,6 +21,10 @@ import Data.Monoid (Monoid (mempty))
 maybeToError :: (Monoid e, MonadError e m) => Maybe a -> m a
 maybeToError Nothing = throwError mempty
 maybeToError (Just a) = return a
+
+maybeToErrorWith :: MonadError e m => e -> Maybe a -> m a
+maybeToErrorWith _ (Just a) = return a
+maybeToErrorWith e Nothing = throwError e
 
 
 iterateUntilFixpoint :: Eq a => (a -> a) -> a -> [a]
