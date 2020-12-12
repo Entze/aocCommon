@@ -23,6 +23,12 @@ main = hspec $ do
         LC.propertyFor 100000 $ propStable1 ((iterateUntilFixpoint id) :: Int -> [Int])
       modifyMaxSuccess (const 1000) $ it "should be stable: QuickCheck" $
         QC.property $ propStable1 ((iterateUntilFixpoint id) :: Int -> [Int])
+  describe "iterateUntilFixpoint' :: Eq a => (a -> a) -> a -> [a]" $ do
+    context "iterateUntilFixpoint' id :: Int -> [Int]" $ do
+      it "should be stable: LeanCheck" $
+        LC.propertyFor 100000 $ propStable1 ((iterateUntilFixpoint' id) :: Int -> [Int])
+      modifyMaxSuccess (const 1000) $ it "should be stable: QuickCheck" $
+        QC.property $ propStable1 ((iterateUntilFixpoint' id) :: Int -> [Int])
   describe "takeUntilEqual :: Eq a => [a] -> [a]" $ do
     context "takeUntilEqual :: [Int] -> [Int]" $ do
       it "should be idempotent: LeanCheck" $
