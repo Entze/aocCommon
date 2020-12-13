@@ -5,6 +5,7 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck as QC
 import Safe
 
+import Data.List
 
 import AocCommon
 
@@ -46,6 +47,18 @@ main = hspec $ do
         LC.propertyFor 100000 $ propIdempotent1 (takeUntilEqual :: [Bool] -> [Bool])
       modifyMaxSuccess (const 1000) $ it "should be idempotent: QuickCheck" $
         QC.property $ propIdempotent1 (takeUntilEqual :: [Bool] -> [Bool])
+  describe "gnomeSortBy :: Ord a => (a -> a -> Ordering) -> [a] -> [a]" $ do
+    context "gnomeSortBy compare -> [Int] -> [Int]" $ do
+      it "gnomeSortBy compare [1,0] ->> [0,1]" $
+        gnomeSortBy compare [1,0] `shouldBe` ([0,1] :: [Int])
+      it "gnomeSortBy compare [1,0,0] ->> [0,0,1]" $
+        gnomeSortBy compare [1,0,0] `shouldBe` ([0,0,1] :: [Int])
+      it "gnomeSortBy compare [1,1,0,0] ->> [0,0,1,1]" $
+        gnomeSortBy compare [1,1,0,0] `shouldBe` ([0,0,1,1] :: [Int])
+      it "should equal sort: LeanCheck" $
+        LC.propertyFor 100000 $ propAreEqual (gnomeSortBy compare) (sort :: [Int] -> [Int])
+      modifyMaxSuccess (const 1000) $ it "should equal sort: QuickCheck" $
+        QC.property $ propAreEqual (gnomeSortBy compare) (sort :: [Int] -> [Int])
 
 
 propIdempotent1 :: Eq a => (a -> a) -> a -> Bool
@@ -58,3 +71,6 @@ propStable1 f a = end == (end >>= (lastMay . f))
   where
     end = lastMay a'
     a' = f a
+
+propAreEqual :: Eq b => (a -> b) -> (a -> b) -> a -> Bool
+propAreEqual f g a = f a == g a
