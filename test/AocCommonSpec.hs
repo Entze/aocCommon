@@ -1,4 +1,3 @@
-
 import Test.Hspec
 import Test.Hspec.LeanCheck as LC
 import Test.Hspec.QuickCheck
