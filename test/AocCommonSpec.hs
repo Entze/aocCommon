@@ -1,75 +1,35 @@
-import Test.Hspec
-import Test.Hspec.LeanCheck as LC
-import Test.Hspec.QuickCheck
-import Test.QuickCheck as QC
-import Safe
 
-import Data.List
 
-import AocCommon
+import Prelude (($!))
+
+import Control.Monad (sequence_)
+
+import Data.Char (Char)
+import Data.Int (Int)
+import Data.List (replicate, (++), length)
+import GHC.Num ((+))
+import Data.String (String)
+
+import System.IO
+
+
+import qualified Data.List.AocCommon.Spec
+import qualified Control.Monad.Except.AocCommon.Spec
+
+seperator :: Int -> String
+seperator n = '\n':(replicate n '-') ++ "\n"
+
+end :: Int -> String
+end n = '\n':(replicate n '#')
+
+tests :: [(String, IO ())]
+tests = [
+  ("Data.List.AocCommon", Data.List.AocCommon.Spec.test),
+  ("Control.Monad.Except.AocCommon", Control.Monad.Except.AocCommon.Spec.test)
+  ]
 
 
 main :: IO ()
-main = hspec $ do
-  describe "maybeToError :: (Monoid e, MonadError e m) => Maybe a -> m a" $ do
-    context "maybeToError :: Maybe Int -> Either String Int" $ do
-      it "maybeToError (Just a) ->> Right a" $
-        ((maybeToError :: Maybe Int -> Either String Int) (Just 1)) `shouldBe` Right 1
-      it "maybeToError Nothing ->> Left []" $
-        ((maybeToError :: Maybe Int -> Either String Int) Nothing) `shouldBe` Left []
-  describe "maybeToErrorWith :: MonadError e m => e -> Maybe a -> m a" $ do
-    context "maybeToErrorWith :: String -> Maybe Int -> Either String Int" $ do
-      it "maybeToErrorWith \"error\" (Just a) ->> Right a" $
-        ((maybeToErrorWith :: String -> Maybe Int -> Either String Int) "error" (Just 1)) `shouldBe` Right 1
-      it "maybeToErrorWith \"error\" Nothing ->> Left \"error\"" $
-        ((maybeToErrorWith :: String -> Maybe Int -> Either String Int) "error" Nothing) `shouldBe` Left "error"
-  describe "iterateUntilFixpoint :: Eq a => (a -> a) -> a -> [a]" $ do
-    context "iterateUntilFixpoint id :: Int -> [Int]" $ do
-      it "should be stable: LeanCheck" $
-        LC.propertyFor 100000 $ propStable1 ((iterateUntilFixpoint id) :: Int -> [Int])
-      modifyMaxSuccess (const 1000) $ it "should be stable: QuickCheck" $
-        QC.property $ propStable1 ((iterateUntilFixpoint id) :: Int -> [Int])
-  describe "iterateUntilFixpoint' :: Eq a => (a -> a) -> a -> [a]" $ do
-    context "iterateUntilFixpoint' id :: Int -> [Int]" $ do
-      it "should be stable: LeanCheck" $
-        LC.propertyFor 100000 $ propStable1 ((iterateUntilFixpoint' id) :: Int -> [Int])
-      modifyMaxSuccess (const 1000) $ it "should be stable: QuickCheck" $
-        QC.property $ propStable1 ((iterateUntilFixpoint' id) :: Int -> [Int])
-  describe "takeUntilEqual :: Eq a => [a] -> [a]" $ do
-    context "takeUntilEqual :: [Int] -> [Int]" $ do
-      it "should be idempotent: LeanCheck" $
-        LC.propertyFor 100000 $ propIdempotent1 (takeUntilEqual :: [Int] -> [Int])
-      modifyMaxSuccess (const 1000) $ it "should be idempotent: QuickCheck" $
-        QC.property $ propIdempotent1 (takeUntilEqual :: [Int] -> [Int])
-    context "takeUntilEqual :: [Bool] -> [Bool]" $ do
-      it "should be idempotent: LeanCheck" $
-        LC.propertyFor 100000 $ propIdempotent1 (takeUntilEqual :: [Bool] -> [Bool])
-      modifyMaxSuccess (const 1000) $ it "should be idempotent: QuickCheck" $
-        QC.property $ propIdempotent1 (takeUntilEqual :: [Bool] -> [Bool])
-  describe "gnomeSortBy :: Ord a => (a -> a -> Ordering) -> [a] -> [a]" $ do
-    context "gnomeSortBy compare -> [Int] -> [Int]" $ do
-      it "gnomeSortBy compare [1,0] ->> [0,1]" $
-        gnomeSortBy compare [1,0] `shouldBe` ([0,1] :: [Int])
-      it "gnomeSortBy compare [1,0,0] ->> [0,0,1]" $
-        gnomeSortBy compare [1,0,0] `shouldBe` ([0,0,1] :: [Int])
-      it "gnomeSortBy compare [1,1,0,0] ->> [0,0,1,1]" $
-        gnomeSortBy compare [1,1,0,0] `shouldBe` ([0,0,1,1] :: [Int])
-      it "should equal sort: LeanCheck" $
-        LC.propertyFor 100000 $ propAreEqual (gnomeSortBy compare) (sort :: [Int] -> [Int])
-      modifyMaxSuccess (const 1000) $ it "should equal sort: QuickCheck" $
-        QC.property $ propAreEqual (gnomeSortBy compare) (sort :: [Int] -> [Int])
-
-
-propIdempotent1 :: Eq a => (a -> a) -> a -> Bool
-propIdempotent1 f a = a' == f a'
-  where
-    a' = f a
-
-propStable1 :: Eq a => (a -> [a]) -> a -> Bool
-propStable1 f a = end == (end >>= (lastMay . f))
-  where
-    end = lastMay a'
-    a' = f a
-
-propAreEqual :: Eq b => (a -> b) -> (a -> b) -> a -> Bool
-propAreEqual f g a = f a == g a
+main =
+  do
+    sequence_ [ do {putStrLn $! (seperator (8+(length title))) ++ "Testing " ++ title; test;  putStrLn $! end 30 } | (title, test) <- tests]

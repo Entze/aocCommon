@@ -17,16 +17,24 @@ library
   hs-source-dirs:     src
   exposed-modules:    Data.List.AocCommon,
                       Control.Monad.Except.AocCommon,
+                      AocCommon.AocTask,
+                      AocCommon.AocDay,
+                      AocCommon.AocMain,
                       AocCommon
   build-depends:      base >= 4.7 && < 5,
                       safe >= 0.3 && < 1,
-                      mtl >= 2.2 && < 3,
+                      mtl >= 2.0 && < 3,
+                      text >= 1.0 && < 2,
+                      either >= 4.0 && < 6,
                       autoexporter >= 1.1 && < 2
 
 test-suite aocCommonSpec
   type:               exitcode-stdio-1.0
   ghc-options:        -Wall
   main-is:            AocCommonSpec.hs
+  other-modules:      CommonSpec,
+                      Data.List.AocCommon.Spec,
+                      Control.Monad.Except.AocCommon.Spec
   hs-source-dirs:     test
   build-depends:      base >= 4.7 && < 5,
                       hspec >= 2.7 && <3,
