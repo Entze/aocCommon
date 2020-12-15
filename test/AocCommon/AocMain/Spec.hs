@@ -47,16 +47,16 @@ test :: IO ()
 test = hspec $ do
   describe "aocParseFile :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> ELM inst" $ do
     context "aocParseFile :: (Text.Text -> ELM TestInstance) -> (TestInstance -> Text.Text) -> Text.Text -> ELM TestInstance" $ do
-      it "toELM . aocParseFile testFromTextSuccess testToTextSuccess (Text.pack \"2\") ->> Right (2, _)" $
-        (runELM . aocParseFile testFromTextSuccess testToTextSuccess) (Text.pack "Inst 2") `shouldBe` Right (Inst 2, map Text.pack [
+      it "toELM . aocParseFile testFromTextSuccess testToTextSuccess (Text.pack \"Inst 2\\n\\n\") ->> Right (2, _)" $
+        (runELM . aocParseFile testFromTextSuccess testToTextSuccess) (Text.pack "Inst 2\n\n") `shouldBe` Right (Inst 2, map Text.pack [
                                                                                                                       "Attempting to parse file.",
                                                                                                                       "Succesfully done \"fromText\".",
                                                                                                                       "Successfully parsed file.",
                                                                                                                       "Checking if parsed file equals content of file.",
                                                                                                                       "Parsed instance and content of file match."
                                                                                                                      ])
-      it "toELM . aocParseFile testFromTextSuccess testToTextFailure (Text.pack \"2\") ->> Left _" $
-        (runELM . aocParseFile testFromTextSuccess testToTextFailure) (Text.pack "Inst 2\n") `shouldBe` Left (map Text.pack [
+      it "toELM . aocParseFile testFromTextSuccess testToTextFailure (Text.pack \"Inst 2\\n\\n\") ->> Left _" $
+        (runELM . aocParseFile testFromTextSuccess testToTextFailure) (Text.pack "Inst 2\n\n") `shouldBe` Left (map Text.pack [
                                                                                                                "Attempting to parse file.",
                                                                                                                "Succesfully done \"fromText\".",
                                                                                                                "Successfully parsed file.",
@@ -67,14 +67,14 @@ test = hspec $ do
                                                                                                                "Inst 2 <-- should be.",
                                                                                                                "Inst 3 <-- is.",
                                                                                                                "Parsed instance and content of file differ."])
-      it "toELM . aocParseFile testFromTextFailure testToTextSuccess (Text.pack \"2\") ->> Left _" $
-        (runELM . aocParseFile testFromTextFailure testToTextSuccess) (Text.pack "Inst 2") `shouldBe` Left (map Text.pack [
+      it "toELM . aocParseFile testFromTextFailure testToTextSuccess (Text.pack \"Inst 2\\n\\n\") ->> Left _" $
+        (runELM . aocParseFile testFromTextFailure testToTextSuccess) (Text.pack "Inst 2\n\n") `shouldBe` Left (map Text.pack [
                                                                                                                "Attempting to parse file.",
                                                                                                                "Error in \"fromText\".",
                                                                                                                "Something went wrong while parsing file."
                                                                                                                ])
-      it "toELM . aocParseFile testFromTextFailure testToTextFailure (Text.pack \"2\") ->> Left _" $
-        (runELM . aocParseFile testFromTextFailure testToTextFailure) (Text.pack "Inst 2") `shouldBe` Left (map Text.pack [
+      it "toELM . aocParseFile testFromTextFailure testToTextFailure (Text.pack \"Inst 2\\n\\n\") ->> Left _" $
+        (runELM . aocParseFile testFromTextFailure testToTextFailure) (Text.pack "Inst 2\n\n") `shouldBe` Left (map Text.pack [
                                                                                                                "Attempting to parse file.",
                                                                                                                "Error in \"fromText\".",
                                                                                                                "Something went wrong while parsing file."

@@ -31,12 +31,12 @@ import Data.Eq (Eq(..), (==))
 import Data.Ord(Ord(..))
 import Data.Function ((.), const, id, flip)
 import Data.Int (Int(..))
-import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head)
+import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head, reverse)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (Monoid(..))
 import Data.Semigroup (Semigroup(..))
 import Data.String (String(..))
-import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines)
+import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines, null)
 import qualified Data.Text.IO as Text (putStrLn, readFile)
 import Data.Tuple (fst, snd, uncurry)
 
@@ -139,14 +139,14 @@ aocParseFile fromText toText content = check parsed
     parse = conditionalBindELM' (Text.pack "Attempting to parse file.") (Text.pack "Something went wrong while parsing file.") (Text.pack "Successfully parsed file.") fromText
     parsed = (parse . return) content
     check = conditionalBindELM' (Text.pack "Checking if parsed file equals content of file.") (Text.pack "Parsed instance and content of file differ.") (Text.pack "Parsed instance and content of file match.") check'
-    check' i = if parsed' == content
+    check' i = if parsedLines' == contentLines
       then return i
       else throwError $! (map Text.pack) msg
       where
         parsed' :: Text.Text
         parsed' = toText i
         parsedLines' = Text.lines parsed'
-        contentLines = Text.lines content
+        contentLines = (reverse . dropWhile Text.null . reverse . Text.lines) content
         differenceLine :: [Text.Text] -> [Text.Text] -> Int -> (String, Int, Int, Maybe Char, Maybe Char)
         differenceLine [] [] lc = ([], lc, 0, Nothing, Nothing)
         differenceLine (l:ls) (j:js) lc
