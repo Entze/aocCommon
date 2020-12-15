@@ -1,7 +1,10 @@
 
 module AocCommon (
   aocMain',
-  runELM,
+  ELM,
+  logELM,
+  logToELM,
+  throwErrorELM,
   maybeToError,
   maybeToErrorWith,
   iterateUntilFixpoint,

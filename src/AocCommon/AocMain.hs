@@ -1,5 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
-module AocCommon.AocMain (ELM, runELM, aocMain', conditionalBindELM, logELM, getLogELM, isExceptionELM, throwErrorELM, aocTasks', aocParseFile, logToELM) where
+module AocCommon.AocMain (ELM,
+                          runELM,
+                          aocMain',
+                          conditionalBindELM,
+                          logELM,
+                          logsELM,
+                          getLogELM,
+                          isExceptionELM,
+                          throwErrorELM,
+                          aocTasks',
+                          aocParseFile,
+                          logToELM) where
 
 import Prelude (undefined, ($!), ($), (+), (-))
 
