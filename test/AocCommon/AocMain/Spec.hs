@@ -2,16 +2,16 @@ module AocCommon.AocMain.Spec where
 
 
 import Test.Hspec
-import Test.Hspec.LeanCheck as LC
-import Test.Hspec.QuickCheck
-import Test.QuickCheck as QC hiding ((===))
-import Test.LeanCheck.Utils.Operators
-import Safe
+--import Test.Hspec.LeanCheck as LC
+--import Test.Hspec.QuickCheck
+--import Test.QuickCheck as QC hiding ((===))
+--import Test.LeanCheck.Utils.Operators
+--import Safe
 
 import Control.Monad.Except
 import qualified Data.Text as Text
 
-import CommonSpec
+--import CommonSpec
 import AocCommon
 import AocCommon.AocMain
 

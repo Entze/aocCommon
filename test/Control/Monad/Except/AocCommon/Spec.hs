@@ -1,10 +1,10 @@
 module Control.Monad.Except.AocCommon.Spec where
 
 import Test.Hspec
-import Test.Hspec.LeanCheck as LC
-import Test.Hspec.QuickCheck
-import Test.QuickCheck as QC
-import Safe
+--import Test.Hspec.LeanCheck as LC
+--import Test.Hspec.QuickCheck
+--import Test.QuickCheck as QC hiding ((===))
+--import Safe
 
 import AocCommon
 

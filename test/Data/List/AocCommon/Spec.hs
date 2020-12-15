@@ -5,7 +5,7 @@ import Test.Hspec.LeanCheck as LC
 import Test.Hspec.QuickCheck
 import Test.QuickCheck as QC hiding ((===))
 import Test.LeanCheck.Utils.Operators
-import Safe
+--import Safe
 
 import Data.List
 

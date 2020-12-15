@@ -15,10 +15,11 @@ extra-source-files:  README.md
 library
   default-language:   Haskell2010
   hs-source-dirs:     src
-  exposed-modules:    Data.List.AocCommon,
-                      Control.Monad.Except.AocCommon,
+  exposed-modules:    AocCommon,
                       AocCommon.AocMain,
-                      AocCommon
+                      Control.Monad.Except.AocCommon,
+                      Data.List.AocCommon,
+                      Data.String.AocCommon
   build-depends:      base >= 4.7 && < 5,
                       safe >= 0.3 && < 1,
                       mtl >= 2.0 && < 3,
@@ -32,8 +33,9 @@ test-suite aocCommonSpec
   main-is:            AocCommonSpec.hs
   other-modules:      CommonSpec,
                       AocCommon.AocMain.Spec,
-                      Data.List.AocCommon.Spec,
                       Control.Monad.Except.AocCommon.Spec
+                      Data.List.AocCommon.Spec,
+                      Data.String.AocCommon.Spec
   hs-source-dirs:     test
   build-depends:      base >= 4.7 && < 5,
                       hspec >= 2.7 && <3,

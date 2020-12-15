@@ -11,9 +11,11 @@ module AocCommon (
   iterateUntilFixpoint',
   takeUntilEqual,
   gnomeSortBy,
+  joinStringsBy
                  ) where
 
 
-import Data.List.AocCommon
 import AocCommon.AocMain
 import Control.Monad.Except.AocCommon
+import Data.List.AocCommon
+import Data.String.AocCommon

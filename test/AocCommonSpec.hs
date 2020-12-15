@@ -4,7 +4,6 @@ import Prelude (($!))
 
 import Control.Monad (sequence_)
 
-import Data.Char (Char)
 import Data.Int (Int)
 import Data.List (replicate, (++), length)
 import GHC.Num ((+))
@@ -13,8 +12,9 @@ import Data.String (String)
 import System.IO
 
 
-import qualified Data.List.AocCommon.Spec
 import qualified Control.Monad.Except.AocCommon.Spec
+import qualified Data.List.AocCommon.Spec
+import qualified Data.String.AocCommon.Spec
 import qualified AocCommon.AocMain.Spec
 
 seperator :: Int -> String
@@ -25,9 +25,10 @@ end n = '\n':(replicate n '#')
 
 tests :: [(String, IO ())]
 tests = [
-  ("Data.List.AocCommon", Data.List.AocCommon.Spec.test),
+  ("AocCommon.AocMain", AocCommon.AocMain.Spec.test),
   ("Control.Monad.Except.AocCommon", Control.Monad.Except.AocCommon.Spec.test),
-  ("AocCommon.AocMain", AocCommon.AocMain.Spec.test)
+  ("Data.List.AocCommon", Data.List.AocCommon.Spec.test),
+  ("Data.String.AocCommon", Data.String.AocCommon.Spec.test)
   ]
 
 

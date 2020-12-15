@@ -138,9 +138,6 @@ aocParseFile fromText toText content = check parsed
         firstDifference = length samecs + 1
 
 
-
-
-
 aocParseFile' :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> IO inst
 aocParseFile' fromText toText = report . aocParseFile fromText toText
 
