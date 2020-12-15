@@ -1,21 +1,26 @@
-module AocCommon.AocMain where
+{-# LANGUAGE FlexibleContexts #-}
+module AocCommon.AocMain (ELM, runELM, aocMain', conditionalBindELM, logELM, getLogELM, isExceptionELM, throwErrorELM, aocTasks', aocParseFile, logToELM) where
 
-import Prelude (undefined)
+import Prelude (undefined, ($!), ($), (+), (-))
 
-import Control.Monad (Monad(..), (=<<))
-import Control.Monad.Except (MonadError(..))
+import Control.Applicative (Applicative(..))
+import Control.Monad (Monad(..), (=<<), when)
+import Control.Monad.Except (MonadError(..), Except(..), runExcept)
+import Control.Monad.Writer.Strict (WriterT(..), runWriterT, Writer, tell)
 
-import Data.Bool (Bool(..))
-import Data.Either (Either(..), either)
-import Data.Either.Combinators (mapBoth, mapRight)
-import Data.Eq (Eq(..))
+import Data.Bool (Bool(..), otherwise, (&&), not)
+import Data.Char (Char(..))
+import Data.Either (Either(..), either, isLeft)
+import Data.Either.Combinators (mapBoth, mapRight, fromLeft', fromRight')
+import Data.Eq (Eq(..), (==))
+import Data.Ord(Ord(..))
 import Data.Function ((.), const, id, flip)
-import Data.List (length, replicate)
+import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head)
 import Data.Monoid (Monoid(..))
 import Data.Semigroup (Semigroup(..))
-import qualified Data.Text as Text (Text, pack, cons, snoc, singleton,unlines)
+import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton,unlines, zip, length)
 import qualified Data.Text.IO as Text (putStrLn, readFile)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 
 import Safe (at)
 
@@ -23,44 +28,128 @@ import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
 import System.IO (IO)
 
-import qualified AocCommon.AocDay as AocDay (AocDay (..))
-import qualified AocCommon.AocTask as AocTask (AocTask (..))
+import Text.Read (Read(..), read)
+import Text.Show (Show(..))
 
 
-aocMain :: (AocDay.AocDay inst, AocTask.AocTask solution1, AocTask.AocTask solution2) => (Text.Text -> inst) -> (inst -> Either [Text.Text] (solution1, [Text.Text])) -> (inst -> Either [Text.Text] (solution2, [Text.Text])) -> IO ()
-aocMain fromText solve1 solve2 = do
+
+type ELM = WriterT [Text.Text] (Except [Text.Text])
+
+runELM :: ELM a -> Either [Text.Text] (a, [Text.Text])
+runELM = runExcept . runWriterT
+
+logTextELM :: Text.Text -> ELM ()
+logTextELM = tell . (:[])
+
+logELM :: Text.Text -> ELM ()
+logELM = logTextELM
+
+logsTextELM :: [Text.Text] -> ELM ()
+logsTextELM = tell
+
+logsELM :: [Text.Text] -> ELM ()
+logsELM = logsTextELM
+
+logToELM :: ELM a -> Text.Text -> ELM a
+logToELM a msg = a <* logELM msg
+
+getLogELM :: ELM a -> [Text.Text]
+getLogELM a = case runELM a of
+  Left trace -> trace
+  Right (_,log) -> log
+
+isExceptionELM :: ELM a -> Bool
+isExceptionELM = isLeft . runELM
+
+throwErrorELM :: ELM a -> Text.Text -> ELM a
+throwErrorELM a = (throwErrorsELM a) . (:[])
+
+throwErrorsELM :: ELM a -> [Text.Text] -> ELM a
+throwErrorsELM = throwErrorsELM' mempty
+
+throwErrorsELM' pre a = (throwError :: [Text.Text] -> ELM a) . (pre `mappend` getLogELM a `mappend`)
+
+conditionalBindELM :: Text.Text -> Text.Text -> Text.Text -> ELM a -> (a -> ELM b) -> ELM b
+conditionalBindELM beforeMsg errMsg successMsg a f = if (not . isExceptionELM) a && isExceptionELM c
+                                                     then throwErrorsELM' ((getLogELM a) `mappend` [beforeMsg]) c [errMsg]
+                                                     else logToELM c successMsg
+  where
+    a' = a <* logELM beforeMsg
+    c = a' >>= f
+
+
+conditionalBindELM' :: Text.Text -> Text.Text -> Text.Text -> (a -> ELM b) -> ELM a -> ELM b
+conditionalBindELM' beforeMsg errMsg successMsg = flip (conditionalBindELM beforeMsg errMsg successMsg)
+
+report :: ELM a -> IO a
+report e = do
+  let run = runELM e
+  case run of
+      Left trace -> (Text.putStrLn . Text.unlines) trace >> exitFailure
+      Right (inst, log) -> (Text.putStrLn . Text.unlines) log >> return inst
+
+aocMain' :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> (inst -> ELM sol1) -> (sol1 -> Text.Text) -> (inst -> ELM sol2) -> (sol2 -> Text.Text) -> IO ()
+aocMain' fromText toText solve1 toText1 solve2 toText2 = do
+  content <- aocGetArgs'
+  inst <- aocParseFile' fromText toText content
+  aocRun' solve1 toText1 solve2 toText2 inst
+
+aocGetArgs' :: IO Text.Text
+aocGetArgs' = do
   args <- getArgs
-  case length args of
-    0 -> do
+  when (null args) $! do
       (Text.putStrLn . Text.pack) "No argument given."
       exitFailure
   let file = args `at` 0
-  content <- Text.readFile file
-  let inst = fromText content
-  case AocDay.instanceToText inst == content of
-    False -> do
-      (Text.putStrLn . Text.pack) "Parsed instance and content of file differ."
-      exitFailure
-  let result = aocTasks solve1 solve2 inst
-  case result of
-    Right ((sol1, sol2),log) -> do
+  Text.readFile file
+
+aocParseFile :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> ELM inst
+aocParseFile fromText toText content = check parsed
+  where
+    parse = conditionalBindELM' (Text.pack "Attempting to parse file.") (Text.pack "Something went wrong while parsing file.") (Text.pack "Successfully parsed file.") fromText
+    parsed = (parse . return) content
+    check = conditionalBindELM' (Text.pack "Checking if parsed file equals content of file.") (Text.pack "Parsed instance and content of file differ.") (Text.pack "Parsed instance and content of file match.") check'
+    check' i = if i' == content
+      then return i
+      else throwError $! ((:[]) . Text.pack) ("Difference at character " ++ (show firstDifference) ++ ": \"" ++ (map fst samecs) ++ "\" | " ++ showDiff ++ ".")
+      where
+        i' :: Text.Text
+        i' = toText i
+        zips = Text.zip i' content
+        samecs :: [(Char, Char)]
+        samecs = takeWhile (uncurry (==)) zips
+        diffcs :: [(Char, Char)]
+        diffcs = dropWhile (uncurry (==)) zips
+        showDiff
+          | Text.length content == Text.length i' = '\'':((fst . head) diffcs):"' vs. '" ++ [(snd . head) diffcs] ++ "'"
+          | Text.length content > Text.length i' = "parsed stops"
+          | otherwise = "content of file stops"
+        firstDifference = length samecs + 1
+
+
+
+
+
+aocParseFile' :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> IO inst
+aocParseFile' fromText toText = report . aocParseFile fromText toText
+
+aocRun' :: (inst -> ELM sol1) -> (sol1 -> Text.Text) -> (inst -> ELM sol2) -> (sol2 -> Text.Text) -> inst -> IO ()
+aocRun' solve1 toText1 solve2 toText2 inst = do
+  let run = (runELM . aocTasks' solve1 solve2) inst
+  case run of
+    Right ((sol1, sol2), log) -> do
       (Text.putStrLn . Text.unlines) log
       Text.putStrLn (Text.pack (replicate 35 '#'))
-      (Text.putStrLn . AocTask.solutionToText) sol1
-      (Text.putStrLn . AocTask.solutionToText) sol2
+      (Text.putStrLn . toText1) sol1
+      (Text.putStrLn . toText2) sol2
       exitSuccess
-    Left err -> do
-      (Text.putStrLn . Text.unlines) err
+    Left trace -> do
+      (Text.putStrLn . Text.unlines) trace
       exitFailure
 
 
-aocTasks :: (AocDay.AocDay inst, AocTask.AocTask solution1, AocTask.AocTask solution2) => (inst -> Either [Text.Text] (solution1, [Text.Text])) -> (inst -> Either [Text.Text] (solution2, [Text.Text])) -> inst -> Either [Text.Text] ((solution1, solution2), [Text.Text])
-aocTasks solve1 solve2 inst = combine (,) ([Text.pack (replicate 25 '-')]) res1 res2
-  where
-    combine :: Semigroup e => (a -> b -> c) -> e -> Either e (a,e) -> Either e (b,e) -> Either e (c,e)
-    combine f sep (Right (a,l1)) (Right (b,l2)) = Right (f a b, l1 <> sep <> l2)
-    combine f sep (Left e1) (Left e2) = Left (e1 <> sep <> e2)
-    combine _ sep (Left e) (Right (_, l2)) = Left (e <> sep <> l2)
-    combine _ sep (Right (_, l1)) (Left e) = Left (l1 <> sep <> e)
-    res1 = solve1 inst
-    res2 = solve2 inst
+aocTasks' :: (inst -> ELM sol1) -> (inst -> ELM sol2) -> inst -> ELM (sol1,sol2)
+aocTasks' solve1 solve2 inst = do
+  sol1 <- solve1 inst
+  sol2 <- solve2 inst
+  return (sol1, sol2)

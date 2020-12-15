@@ -15,6 +15,7 @@ import System.IO
 
 import qualified Data.List.AocCommon.Spec
 import qualified Control.Monad.Except.AocCommon.Spec
+import qualified AocCommon.AocMain.Spec
 
 seperator :: Int -> String
 seperator n = '\n':(replicate n '-') ++ "\n"
@@ -25,7 +26,8 @@ end n = '\n':(replicate n '#')
 tests :: [(String, IO ())]
 tests = [
   ("Data.List.AocCommon", Data.List.AocCommon.Spec.test),
-  ("Control.Monad.Except.AocCommon", Control.Monad.Except.AocCommon.Spec.test)
+  ("Control.Monad.Except.AocCommon", Control.Monad.Except.AocCommon.Spec.test),
+  ("AocCommon.AocMain", AocCommon.AocMain.Spec.test)
   ]
 
 
