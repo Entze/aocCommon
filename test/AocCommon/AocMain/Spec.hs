@@ -56,12 +56,16 @@ test = hspec $ do
                                                                                                                       "Parsed instance and content of file match."
                                                                                                                      ])
       it "toELM . aocParseFile testFromTextSuccess testToTextFailure (Text.pack \"2\") ->> Left _" $
-        (runELM . aocParseFile testFromTextSuccess testToTextFailure) (Text.pack "Inst 2") `shouldBe` Left (map Text.pack [
+        (runELM . aocParseFile testFromTextSuccess testToTextFailure) (Text.pack "Inst 2\n") `shouldBe` Left (map Text.pack [
                                                                                                                "Attempting to parse file.",
                                                                                                                "Succesfully done \"fromText\".",
                                                                                                                "Successfully parsed file.",
                                                                                                                "Checking if parsed file equals content of file.",
-                                                                                                               "Difference at character 6: \"Inst \" | '3' vs. '2'.",
+                                                                                                               "Parsed diverges at line: 1 character: 6",
+                                                                                                               "Inst ",
+                                                                                                               "     ^ here",
+                                                                                                               "Inst 2 <-- should be.",
+                                                                                                               "Inst 3 <-- is.",
                                                                                                                "Parsed instance and content of file differ."])
       it "toELM . aocParseFile testFromTextFailure testToTextSuccess (Text.pack \"2\") ->> Left _" $
         (runELM . aocParseFile testFromTextFailure testToTextSuccess) (Text.pack "Inst 2") `shouldBe` Left (map Text.pack [

@@ -5,9 +5,13 @@ module AocCommon.AocMain (ELM,
                           conditionalBindELM,
                           logELM,
                           logsELM,
+                          logStringELM,
+                          logStringsELM,
                           getLogELM,
                           isExceptionELM,
                           throwErrorELM,
+                          throwErrorStringELM,
+                          throwErrorStringsELM,
                           aocTasks',
                           aocParseFile,
                           logToELM) where
@@ -16,7 +20,7 @@ import Prelude (undefined, ($!), ($), (+), (-))
 
 import Control.Applicative (Applicative(..))
 import Control.Monad (Monad(..), (=<<), when)
-import Control.Monad.Except (MonadError(..), Except(..), runExcept)
+import Control.Monad.Except (MonadError(..), Except(..), runExcept, throwError)
 import Control.Monad.Writer.Strict (WriterT(..), runWriterT, Writer, tell)
 
 import Data.Bool (Bool(..), otherwise, (&&), not)
@@ -26,14 +30,17 @@ import Data.Either.Combinators (mapBoth, mapRight, fromLeft', fromRight')
 import Data.Eq (Eq(..), (==))
 import Data.Ord(Ord(..))
 import Data.Function ((.), const, id, flip)
+import Data.Int (Int(..))
 import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (Monoid(..))
 import Data.Semigroup (Semigroup(..))
-import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton,unlines, zip, length)
+import Data.String (String(..))
+import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines)
 import qualified Data.Text.IO as Text (putStrLn, readFile)
 import Data.Tuple (fst, snd, uncurry)
 
-import Safe (at)
+import Safe (at, atMay)
 
 import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
@@ -52,14 +59,20 @@ runELM = runExcept . runWriterT
 logTextELM :: Text.Text -> ELM ()
 logTextELM = tell . (:[])
 
+logStringELM :: String -> ELM ()
+logStringELM = logTextELM . Text.pack
+
 logELM :: Text.Text -> ELM ()
 logELM = logTextELM
 
-logsTextELM :: [Text.Text] -> ELM ()
-logsTextELM = tell
+logTextsELM :: [Text.Text] -> ELM ()
+logTextsELM = tell
+
+logStringsELM :: [String] -> ELM ()
+logStringsELM = logTextsELM . map Text.pack
 
 logsELM :: [Text.Text] -> ELM ()
-logsELM = logsTextELM
+logsELM = logTextsELM
 
 logToELM :: ELM a -> Text.Text -> ELM a
 logToELM a msg = a <* logELM msg
@@ -71,6 +84,12 @@ getLogELM a = case runELM a of
 
 isExceptionELM :: ELM a -> Bool
 isExceptionELM = isLeft . runELM
+
+throwErrorStringELM :: String -> ELM a
+throwErrorStringELM = throwError . (:[]) . Text.pack
+
+throwErrorStringsELM :: [String] -> ELM a
+throwErrorStringsELM = throwError . (map Text.pack)
 
 throwErrorELM :: ELM a -> Text.Text -> ELM a
 throwErrorELM a = (throwErrorsELM a) . (:[])
@@ -120,22 +139,35 @@ aocParseFile fromText toText content = check parsed
     parse = conditionalBindELM' (Text.pack "Attempting to parse file.") (Text.pack "Something went wrong while parsing file.") (Text.pack "Successfully parsed file.") fromText
     parsed = (parse . return) content
     check = conditionalBindELM' (Text.pack "Checking if parsed file equals content of file.") (Text.pack "Parsed instance and content of file differ.") (Text.pack "Parsed instance and content of file match.") check'
-    check' i = if i' == content
+    check' i = if parsed' == content
       then return i
-      else throwError $! ((:[]) . Text.pack) ("Difference at character " ++ (show firstDifference) ++ ": \"" ++ (map fst samecs) ++ "\" | " ++ showDiff ++ ".")
+      else throwError $! (map Text.pack) msg
       where
-        i' :: Text.Text
-        i' = toText i
-        zips = Text.zip i' content
-        samecs :: [(Char, Char)]
-        samecs = takeWhile (uncurry (==)) zips
-        diffcs :: [(Char, Char)]
-        diffcs = dropWhile (uncurry (==)) zips
-        showDiff
-          | Text.length content == Text.length i' = '\'':((fst . head) diffcs):"' vs. '" ++ [(snd . head) diffcs] ++ "'"
-          | Text.length content > Text.length i' = "parsed stops"
-          | otherwise = "content of file stops"
-        firstDifference = length samecs + 1
+        parsed' :: Text.Text
+        parsed' = toText i
+        parsedLines' = Text.lines parsed'
+        contentLines = Text.lines content
+        differenceLine :: [Text.Text] -> [Text.Text] -> Int -> (String, Int, Int, Maybe Char, Maybe Char)
+        differenceLine [] [] lc = ([], lc, 0, Nothing, Nothing)
+        differenceLine (l:ls) (j:js) lc
+          | l == j = differenceLine ls js (lc + 1)
+          | otherwise = (map fst match, lc, divergeAt, (Text.unpack l) `atMay` (divergeAt - 1), (Text.unpack j) `atMay` (divergeAt - 1))
+          where
+            zips = Text.zip l j
+            match = takeWhile (uncurry (==)) zips
+            diverge = dropWhile (uncurry (==)) zips
+            divergeAt = length match + 1
+        (matching, lineCount, charCount, firstDivergentCharOrig, firstDivergentCharParsed) = differenceLine contentLines parsedLines' 1
+        preMsg :: String
+        preMsg = "Parsed diverges at line: " ++ (show lineCount) ++ " character: " ++ (show charCount) ++ ""
+        msg :: [String]
+        msg = [preMsg, matching, pointer, orig, pars]
+          where
+            pointer = replicate (length matching) ' ' ++ "^ here"
+            orig = matching ++ maybe " | line ends here" (:[]) firstDivergentCharOrig ++ " <-- should be."
+            pars = matching ++ maybe " | line ends here" (:[]) firstDivergentCharParsed ++ " <-- is."
+
+
 
 
 aocParseFile' :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> IO inst
