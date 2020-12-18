@@ -31,12 +31,12 @@ import Data.Eq (Eq(..), (==))
 import Data.Ord(Ord(..))
 import Data.Function ((.), const, id, flip)
 import Data.Int (Int(..))
-import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head, reverse)
+import Data.List (length, replicate, null, takeWhile, dropWhile, map, (++), head, reverse, take)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (Monoid(..))
 import Data.Semigroup (Semigroup(..))
 import Data.String (String(..))
-import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines, null)
+import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines, null, take, empty, unsnoc)
 import qualified Data.Text.IO as Text (putStrLn, readFile)
 import Data.Tuple (fst, snd, uncurry)
 
@@ -137,35 +137,36 @@ aocParseFile :: (Text.Text -> ELM inst) -> (inst -> Text.Text) -> Text.Text -> E
 aocParseFile fromText toText content = check parsed
   where
     parse = conditionalBindELM' (Text.pack "Attempting to parse file.") (Text.pack "Something went wrong while parsing file.") (Text.pack "Successfully parsed file.") fromText
-    parsed = (parse . return) content
+    parsed = ((parse . return) content) <* (logsELM $! ((map Text.pack ["First lines of content:"]) ++ preview))
+    preview'' = (map (Text.take 78) (take 5 contentLines))
+    preview' = map (\l -> if Text.length l > 77 then (maybe Text.empty fst (Text.unsnoc l)) <> Text.pack "..." else l) preview''
+    preview = if length contentLines > 5 then preview' <> map Text.pack ["..."] else preview'
+    contentLines = (reverse . dropWhile Text.null . reverse . Text.lines) content
     check = conditionalBindELM' (Text.pack "Checking if parsed file equals content of file.") (Text.pack "Parsed instance and content of file differ.") (Text.pack "Parsed instance and content of file match.") check'
     check' i = if parsedLines' == contentLines
       then return i
-      else throwError $! (map Text.pack) msg
+      else throwError $! msg
       where
         parsed' :: Text.Text
         parsed' = toText i
         parsedLines' = Text.lines parsed'
-        contentLines = (reverse . dropWhile Text.null . reverse . Text.lines) content
-        differenceLine :: [Text.Text] -> [Text.Text] -> Int -> (String, Int, Int, Maybe Char, Maybe Char)
-        differenceLine [] [] lc = ([], lc, 0, Nothing, Nothing)
+        differenceLine :: [Text.Text] -> [Text.Text] -> Int -> (Text.Text, Text.Text, Int, Int, Int)
+        differenceLine [] [] lc = (Text.empty, Text.empty, 0, lc, 0)
         differenceLine (l:ls) (j:js) lc
           | l == j = differenceLine ls js (lc + 1)
-          | otherwise = (map fst match, lc, divergeAt, (Text.unpack l) `atMay` (divergeAt - 1), (Text.unpack j) `atMay` (divergeAt - 1))
+          | otherwise = (l, j, length match, lc, divergeAt)
           where
             zips = Text.zip l j
             match = takeWhile (uncurry (==)) zips
             diverge = dropWhile (uncurry (==)) zips
             divergeAt = length match + 1
-        (matching, lineCount, charCount, firstDivergentCharOrig, firstDivergentCharParsed) = differenceLine contentLines parsedLines' 1
-        preMsg :: String
-        preMsg = "Parsed diverges at line: " ++ (show lineCount) ++ " character: " ++ (show charCount) ++ ""
-        msg :: [String]
-        msg = [preMsg, matching, pointer, orig, pars]
+        (o, p, matching, lineCount, charCount) = differenceLine contentLines parsedLines' 1
+        preMsg :: Text.Text
+        preMsg = Text.pack $! ("Parsed diverges at line: " ++ (show lineCount) ++ " character: " ++ (show charCount))
+        msg :: [Text.Text]
+        msg = [preMsg, o, pointer, p]
           where
-            pointer = replicate (length matching) ' ' ++ "^ here"
-            orig = matching ++ maybe " | line ends here" (:[]) firstDivergentCharOrig ++ " <-- should be."
-            pars = matching ++ maybe " | line ends here" (:[]) firstDivergentCharParsed ++ " <-- is."
+            pointer = Text.pack $! (replicate matching ' ' ++ "^ should be, but is:")
 
 
 

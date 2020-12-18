@@ -52,6 +52,8 @@ test = hspec $ do
                                                                                                                       "Attempting to parse file.",
                                                                                                                       "Succesfully done \"fromText\".",
                                                                                                                       "Successfully parsed file.",
+                                                                                                                      "First lines of content:",
+                                                                                                                      "Inst 2",
                                                                                                                       "Checking if parsed file equals content of file.",
                                                                                                                       "Parsed instance and content of file match."
                                                                                                                      ])
@@ -60,12 +62,14 @@ test = hspec $ do
                                                                                                                "Attempting to parse file.",
                                                                                                                "Succesfully done \"fromText\".",
                                                                                                                "Successfully parsed file.",
+                                                                                                               "First lines of content:",
+                                                                                                               "Inst 2",
+
                                                                                                                "Checking if parsed file equals content of file.",
                                                                                                                "Parsed diverges at line: 1 character: 6",
-                                                                                                               "Inst ",
-                                                                                                               "     ^ here",
-                                                                                                               "Inst 2 <-- should be.",
-                                                                                                               "Inst 3 <-- is.",
+                                                                                                               "Inst 2",
+                                                                                                               "     ^ should be, but is:",
+                                                                                                               "Inst 3",
                                                                                                                "Parsed instance and content of file differ."])
       it "toELM . aocParseFile testFromTextFailure testToTextSuccess (Text.pack \"Inst 2\\n\\n\") ->> Left _" $
         (runELM . aocParseFile testFromTextFailure testToTextSuccess) (Text.pack "Inst 2\n\n") `shouldBe` Left (map Text.pack [
