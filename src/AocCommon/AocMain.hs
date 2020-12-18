@@ -16,7 +16,7 @@ module AocCommon.AocMain (ELM,
                           aocParseFile,
                           logToELM) where
 
-import Prelude (undefined, ($!), ($), (+), (-))
+import Prelude (undefined, ($!), ($), (+), (-), abs)
 
 import Control.Applicative (Applicative(..))
 import Control.Monad (Monad(..), (=<<), when)
@@ -36,7 +36,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (Monoid(..))
 import Data.Semigroup (Semigroup(..))
 import Data.String (String(..))
-import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines, null, take, empty, unsnoc)
+import qualified Data.Text as Text (Text, pack, unpack, cons, snoc, singleton, unlines, zip, length, lines, null, take, empty, unsnoc, drop)
 import qualified Data.Text.IO as Text (putStrLn, readFile)
 import Data.Tuple (fst, snd, uncurry)
 
@@ -163,10 +163,19 @@ aocParseFile fromText toText content = check parsed
         (o, p, matching, lineCount, charCount) = differenceLine contentLines parsedLines' 1
         preMsg :: Text.Text
         preMsg = Text.pack $! ("Parsed diverges at line: " ++ (show lineCount) ++ " character: " ++ (show charCount))
-        msg :: [Text.Text]
-        msg = [preMsg, o, pointer, p]
+        convTrunc :: Int -> Text.Text -> Text.Text
+        convTrunc m t
+          | m <= 40 && e <= 40 = t
+          | m <= 40 = (Text.take 77 t) <> (Text.pack "...")
+          | e <= 40 = (Text.pack "...") <> (Text.drop ((abs excessStart) + 3) t)
+          | otherwise = (Text.pack "...") <> (Text.take 77 (Text.drop (abs excessStart) t)) <> (Text.pack "...")
           where
-            pointer = Text.pack $! (replicate matching ' ' ++ "^ should be, but is:")
+            e = (Text.length t) - m
+            excessStart = 40 - m
+        msg :: [Text.Text]
+        msg = [preMsg, convTrunc matching o, pointer, convTrunc matching p]
+          where
+            pointer = Text.pack $! (replicate (min 40 matching) ' ' ++ "^ should be, but is:")
 
 
 
